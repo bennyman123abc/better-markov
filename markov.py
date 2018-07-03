@@ -23,10 +23,10 @@ class squeaky:
 
     # quick workaround for passing
     # context
-    def __init__(self, context):
+    def __init__(self, message):
 
         # set the context
-        self.ctx = context
+        self.message = message
 
     # whem this class is called
     def __call__(self, match):
@@ -63,12 +63,12 @@ class squeaky:
         try:
 
             # look it up
-            return self.ctx.message.guild.get_member(uid).name
+            return self.message.server.get_member(uid).name
 
         except:
 
             # it might be a role
-            for role in self.ctx.message.guild.roles:
+            for role in self.message.server.roles:
 
                 # check if it is here
                 if role.id == uid:
@@ -140,6 +140,12 @@ async def on_message(message):
 
         if cmd == "markov":
             await markov(message, args)
+
+    elif not message.content.startswith("m~") and not message.author.bot:
+        with open("chat.log", "a") as f:
+            # write the message
+            f.write(message.content + "\n")
+            f.close()
 
 
 
@@ -227,7 +233,7 @@ async def markov(message, args):
 
     # make the message squeaky clean
     print("4")
-    sentence = re.sub(r"\<\@(.*?)\>", squeaky(ctx), sentence, flags=re.IGNORECASE)
+    sentence = re.sub(r"\<\@(.*?)\>", squeaky(message), sentence, flags=re.IGNORECASE)
 
     # remove the @everyones and @heres
     sentence = re.sub(r"\@everyone", "everyone", sentence, flags=re.IGNORECASE)
@@ -238,7 +244,7 @@ async def markov(message, args):
         # send it
         # await ctx.send(sentence)
         print(f"Sentence: { sentence }")
-        await bot.send_message(message.channel.id, sentence)
+        await bot.send_message(message.channel, sentence)
 
     except discord.errors.HTTPException:
 
