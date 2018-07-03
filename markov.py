@@ -105,12 +105,12 @@ async def on_ready():
 
     # print some output
     print(
-        f"logged in as: { bot.user.name } id:{ bot.user.id } | connected to { str(len(bot.guilds)) } server(s)"
+        f"logged in as: { bot.user.name } id:{ bot.user.id } | connected to { str(len(bot.servers)) } server(s)"
     )
     print(
         f"invite: https://discordapp.com/oauth2/authorize?bot_id={ bot.user.id }&scope=bot&permissions=8"
     )
-    await bot.change_presence(activity=discord.Game(name="scanning your text..."))
+    await bot.change_presence(game=discord.Game(name="scanning your text..."))
 
     # make the chain
 
@@ -127,82 +127,106 @@ async def on_ready():
     global chain
     chain = markovify.NewlineText(extracted_text)
 
+@bot.event
+async def on_message(message):
+    if message.content.startswith("m~"):
+        print("Got command!")
+        print(message.content)
+        args = message.content.split()
+        print(args)
+        cmd = args[0].replace("m~", '')
+        print(cmd)
+        args = args.remove(args[0])
+
+        if cmd == "markov":
+            await markov(message, args)
+
+
+
 
 # the only command
 
-@bot.command()
-async def markov(ctx, *args):
-
+# @bot.command()
+async def markov(message, args):
+    print("1")
     # global copy
     global chain
-
+    print("2")
     # make the sentence variable
     sentence = None
 
-    # check if we have arguments
-    if args == ():
-
+    while sentence == None:
+        print("3")
         # make a sentence
-        while sentence == None:
+        sentence = chain.make_sentence(tries=250)
 
-            # make a sentence
-            sentence = chain.make_sentence(tries=250)
+    # check if we have arguments
+    # if args != None:
 
-    else:
+    #     # make a sentence
+    #     while sentence == None:
 
-        # make a variable for the
-        # to-be-sent message
-        sentence = ""
+    #         # make a sentence
+    #         sentence = chain.make_sentence(tries=250)
 
-        # individual sentence var
-        isentence = None
+    # else:
 
-        # make a variable for the
-        # number of sentences we
-        # have constructed
-        x = 1
+    #     # make a variable for the
+    #     # to-be-sent message
+    #     sentence = ""
 
-        # check if the arg is a valid
-        # int
-        try:
+    #     # individual sentence var
+    #     isentence = None
 
-            # check
-            iters = int(args[0])
+    #     # make a variable for the
+    #     # number of sentences we
+    #     # have constructed
+    #     x = 1
 
-            # tell them if it is definitely too big
-            if iters >= 50:
+    #     # check if the arg is a valid
+    #     # int
+    #     try:
 
-                # send a message
-                await ctx.send(f"{ ctx.author.mention }, that number of sentences is definitely way too high!")
+    #         # check
+    #         iters = int(args[0])
 
-                # exit
-                return
+    #         # tell them if it is definitely too big
+    #         if iters >= 50:
 
-        except ValueError:
+    #             # send a message
+    #             # await ctx.send(f"{ ctx.author.mention }, that number of sentences is definitely way too high!")
+    #             await bot.send_message(message.channel.id, f"<@{ message.author.id }>, that number of sentences is definitely way too high!")
 
-            # respond saying it isn't valid
-            await ctx.send(f"{ args[0] } is not a number...")
+    #             # exit
+    #             return
 
-            # exit
-            return
+    #     except ValueError:
 
-        # now construct the message
-        for x in range(iters):
+    #         # respond saying it isn't valid
+    #         # await ctx.send(f"{ args[0] } is not a number...")
+    #         await bot.send_message(message.channel.id, f"{ args[0] } is not a number...")
 
-            # make sure we have a message
-            while isentence == None:
+    #         # exit
+    #         return
 
-                # make the message
-                isentence = chain.make_sentence(tries=250)
+    #     # now construct the message
+    #     for x in range(iters):
 
-            # if it works, append the message to the
-            # full message
-            sentence += ("%s\n" % isentence)
+    #         # make sure we have a message
+    #         while isentence == None:
 
-            # reset the isentence variable
-            isentence = None
+    #             # make the message
+    #             isentence = chain.make_sentence(tries=250)
+
+    #         # if it works, append the message to the
+    #         # full message
+    #         sentence += ("%s\n" % isentence)
+
+    #         # reset the isentence variable
+    #         isentence = None
 
     # make the message squeaky clean
+    print("4")
     sentence = re.sub(r"\<\@(.*?)\>", squeaky(ctx), sentence, flags=re.IGNORECASE)
 
     # remove the @everyones and @heres
@@ -212,12 +236,15 @@ async def markov(ctx, *args):
     try:
 
         # send it
-        await ctx.send(sentence)
+        # await ctx.send(sentence)
+        print(f"Sentence: { sentence }")
+        await bot.send_message(message.channel.id, sentence)
 
     except discord.errors.HTTPException:
 
         # send an error message
-        await ctx.send(f"{ ctx.author.mention }, sorry, but the message generated was too long...")
+        # await ctx.send(f"{ ctx.author.mention }, sorry, but the message generated was too long...")
+        await bot.send_message("Sorry, but the message generated was too long!")
 
 
 # run the bot

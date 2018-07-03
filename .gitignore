@@ -1,1 +1,4 @@
 config.json
+.vscode
+chat.log
+env
